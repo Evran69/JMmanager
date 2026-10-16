@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rockstar Life: Juleutgave v5.3 (Roligere Tempo)</title>
+    <style>
+        :root {
+            --bg-dark: #0b111e;
+            --bg-panel: #151f32;
+            --bg-card: #1e293b;
+            --accent-red: #e11d48;
+            --accent-gold: #f59e0b;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top, #172554 0%, #0b111e 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #snow-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 360px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #1e293b;
+            border-left: 5px solid var(--accent-gold);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .toast.success { border-left-color: var(--accent-green); }
+        .toast.error { border-left-color: var(--accent-red); }
+
+        .app-wrapper {
+            position: relative;
+            z-index: 2;
+            max-width: 1380px;
+            margin: 0 auto;
+            padding: 12px 16px 40px 16px;
+        }
+
+        header {
+            background: linear-gradient(135deg, rgba(185, 28, 28, 0.92), rgba(15, 23, 42, 0.96));
+            border: 2px solid var(--accent-gold);
+            border-radius: 14px;
+            padding: 12px 18px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .band-badge {
+            background: rgba(0,0,0,0.45);
+            border: 1px solid var(--accent-gold);
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            cursor: pointer;
+        }
+
+        .stats-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .stat-pill {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 95px;
+        }
+
+        .stat-pill small {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-pill strong {
+            font-size: 1rem;
+            color: var(--accent-gold);
+        }
+
+        .status-monitor {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            border-radius: 10px;
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.88rem;
+        }
+
+        .tabs-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 160px;
+            background: var(--bg-panel);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent-red), #9f1239);
+            border-color: var(--accent-gold);
+        }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 2.3fr 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 14px;
+        }
+
+        .card h2, .card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sub-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 720px) {
+            .sub-grid-2 { grid-template-columns: 1fr; }
+        }
+
+        button {
+            background: var(--accent-red);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        button:hover:not(:disabled) { filter: brightness(1.15); }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-green { background: var(--accent-green); color: #052e16; }
+        .btn-gold { background: var(--accent-gold); color: #1e1b4b; }
+        .btn-blue { background: var(--accent-blue); }
+        .btn-purple { background: var(--accent-purple); }
+        .btn-dark { background: var(--bg-card); border-color: var(--border); }
+
+        input[type="text"], select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 9px 11px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .sequencer-row {
+            display: grid;
+            grid-template-columns: 95px repeat(16, 1fr);
+            gap: 4px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .seq-label {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .seq-step {
+            height: 28px;
+            border-radius: 5px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .seq-step.on-0 { background: #ef4444; border-color: #fca5a5; }
+        .seq-step.on-1 { background: #f59e0b; border-color: #fde68a; }
+        .seq-step.on-2 { background: #3b82f6; border-color: #93c5fd; }
+        .seq-step.on-3 { background: #10b981; border-color: #6ee7b7; }
+        .seq-step.playing-head { outline: 2px solid #ffffff; transform: scale(1.08); }
+
+        canvas.module-canvas {
+            width: 100%;
+            background: #070b14;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: block;
+        }
+
+        .item-row {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .log-box {
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            height: 210px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.82rem;
+        }
+
+        .log-line { margin-bottom: 5px; line-height: 1.35; }
+        .log-line.ok { color: #34d399; }
+        .log-line.warn { color: #fbbf24; }
+        .log-line.err { color: #fb7185; }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 5000;
+            padding: 16px;
+        }
+        .modal-backdrop.open { display: flex; }
+
+        .modal-box {
+            background: #1e293b;
+            border: 2px solid var(--accent-gold);
+            border-radius: 14px;
+            max-width: 580px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .lane-btn-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="snow-canvas"></canvas>
+<div id="toast-container"></div>
+
+<div class="app-wrapper">
+    <header>
+        <div class="brand-title">
+            <span style="font-size:2rem;">🎅🎸</span>
+            <div>
+                <h1>Rockstar Life: Juleutgave v5.3</h1>
+                <button type="button" class="band-badge" id="band-name-badge" data-action="rename-band">Band: The Julebukks ✏️</button>
+            </div>
+        </div>
+
+        <div class="stats-strip">
+            <div class="stat-pill"><small>Penger</small><strong id="ui-money">15 000 kr</strong></div>
+            <div class="stat-pill"><small>Fans</small><strong id="ui-fans">150</strong></div>
+            <div class="stat-pill"><small>Energi</small><strong id="ui-energy">100%</strong></div>
+            <div class="stat-pill"><small>Jule-Hype</small><strong id="ui-hype">15%</strong></div>
+            <button type="button" class="btn-dark" id="btn-sound-toggle" data-action="toggle-sound">🔊 Lyd: PÅ</button>
+            <button type="button" class="btn-dark" data-action="reset-game">🔄 Nullstill</button>
+        </div>
+    </header>
+
+    <div class="status-monitor">
+        <div id="action-feedback">🟢 <strong>Spillet er klart!</strong> (Rytmespillet har nå 50% lavere hastighet).</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-green" data-action="rest-band">🎄 Drikk Julegløgg (+100% Energi)</button>
+            <button type="button" class="btn-gold" data-action="open-tabloid">📰 Hold Pressekonferanse</button>
+        </div>
+    </div>
+
+    <!-- FANEMENY -->
+    <div class="tabs-nav">
+        <button type="button" class="tab-btn active" id="tabbtn-studio" data-action="switch-tab" data-tab="studio">1. 🎙️ Flerspors Studio</button>
+        <button type="button" class="tab-btn" id="tabbtn-cover" data-action="switch-tab" data-tab="cover">2. 🎨 Cover & Utgivelse</button>
+        <button type="button" class="tab-btn" id="tabbtn-concert" data-action="switch-tab" data-tab="concert">3. 🗺️ Turné & Rytmekonsert</button>
+        <button type="button" class="tab-btn" id="tabbtn-band" data-action="switch-tab" data-tab="band">4. 🦌 Bandrom & Intervju</button>
+        <button type="button" class="tab-btn" id="tabbtn-shop" data-action="switch-tab" data-tab="shop">5. 🎬 Diskografi, Video & Butikk</button>
+    </div>
+
+    <div class="workspace-grid">
+        <div class="main-column">
+
+            <!-- FANE 1: STUDIO -->
+            <div class="tab-panel active" id="tab-studio">
+                <div class="card">
+                    <h2>
+                        <span>🥁 1. 16-Stegs Tromme- & Bjellemaskin</span>
+                        <span style="font-size:0.85rem; color:var(--accent-green);" id="seq-groove-label">Groove-bonus: +18%</span>
+                    </h2>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; align-items:center;">
+                        <button type="button" class="btn-green" id="btn-seq-play" data-action="toggle-seq">▶️ Start Trommemaskin</button>
+                        <button type="button" class="btn-dark" data-action="drum-preset" data-preset="rock">Preset: Julerock</button>
+                        <button type="button" class="btn-dark" data-action="drum-preset" data-preset="disco">Preset: Gløgg-Disco</button>
+                        <button type="button" class="btn-dark" data-action="drum-preset" data-preset="metal">Preset: Nisse-Metal</button>
+                        <button type="button" class="btn-dark" data-action="drum-clear">Tøm rutenett</button>
+                        <label style="font-size:0.85rem; margin-left:auto;">
+                            Tempo: <strong id="bpm-val">120</strong> BPM
+                            <input type="range" id="bpm-slider" min="80" max="165" value="120" style="vertical-align:middle; width:95px;">
+                        </label>
+                    </div>
+                    <div id="sequencer-grid"></div>
+                </div>
+
+                <div class="card">
+                    <h2>
+                        <span>🎙️ 2. Flerspors Opptaker (Stemme + Instrument)</span>
+                        <span id="rec-status-badge" style="font-size:0.82rem; color:var(--text-muted);">Klar til opptak</span>
+                    </h2>
+                    <div class="sub-grid-2" style="margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Velg Komp-Instrument:</label>
+                            <select id="backing-instrument">
+                                <option value="guitar">🎸 Julerock El-Gitar (Powerchords)</option>
+                                <option value="synth">🎹 Magisk Nordpolen-Synth (Arpeggio)</option>
+                                <option value="metal">🤘 Heavy Nisse-Bass & Riff</option>
+                                <option value="drums">🥁 Kun 16-Stegs Trommemaskin</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:14px; align-items:center; padding-top:16px;">
+                            <label style="font-size:0.85rem; flex:1;">
+                                🎤 Mik-volum: <span id="mic-gain-label">130%</span>
+                                <input type="range" id="mic-gain-slider" min="50" max="250" value="130" style="width:100%;">
+                            </label>
+                            <label style="font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" id="reverb-toggle" checked> 🏛️ Studio-Ekko
+                            </label>
+                        </div>
+                    </div>
+
+                    <canvas id="vocal-canvas" class="module-canvas" width="760" height="100" style="margin-bottom:12px;"></canvas>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                        <button type="button" id="btn-rec-mic" data-action="rec-start" data-mic="true">🔴 Ta opp med Mikrofon + Band (6s)</button>
+                        <button type="button" class="btn-blue" id="btn-rec-synth" data-action="rec-start" data-mic="false">🎶 Ta opp Synth-Vokal + Band (Uten Mik)</button>
+                        <button type="button" class="btn-gold" id="btn-rec-stop" data-action="rec-stop" disabled>⏹️ Stopp Opptak Tidlig</button>
+                        <span style="margin-left:auto; font-weight:700; color:var(--accent-gold);" id="vocal-score-label">Opptaks-Score: 0 / 100</span>
+                    </div>
+
+                    <div id="studio-preview-box" style="display:none; background:#0f172a; border:1px solid var(--accent-green); border-radius:8px; padding:10px; margin-top:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <span style="font-size:0.86rem; color:var(--accent-green); font-weight:700;">✅ Ferdig mikset lydfil:</span>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <audio id="studio-audio-preview" controls style="height:32px;"></audio>
+                                <a id="studio-download-link" class="btn-blue" style="text-decoration:none; padding:6px 10px; border-radius:6px; font-size:0.8rem; color:#fff;" download="julelat.webm">⬇️ Last ned lydfil</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>💾 3. Lagre Låt til Demo-Tape</h2>
+                    <div class="sub-grid-2" style="margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Låttittel:</label>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" id="song-title-input" placeholder="F.eks. Gløgg i Gitarforsterkeren">
+                                <button type="button" class="btn-dark" data-action="random-title">🎲 Foreslå</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Sjanger:</label>
+                            <select id="song-genre-select">
+                                <option value="Julerock">🎸 Julerock</option>
+                                <option value="Nisse-Metal">🤘 Nisse-Metal</option>
+                                <option value="Gløgg-Pop">✨ Gløgg-Pop</option>
+                                <option value="Punk-Jul">⚡ Punk-Jul</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-green" style="width:100%; padding:12px; font-size:1rem;" data-action="save-demo">💾 Lagre Låt (-15% Energi)</button>
+                </div>
+            </div>
+
+            <!-- FANE 2: COVER & UTGIVELSE -->
+            <div class="tab-panel" id="tab-cover">
+                <div class="card">
+                    <h2>🎨 Design Platecover & Slipp Singel</h2>
+                    <div class="sub-grid-2">
+                        <div>
+                            <canvas id="cover-canvas" class="module-canvas" width="360" height="360" style="max-width:360px; margin:0 auto; cursor:crosshair;"></canvas>
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem; color:var(--text-muted);">1. Velg ferdig innspilt demo-låt:</label>
+                            <select id="unreleased-select" style="margin-bottom:10px;"></select>
+
+                            <label style="font-size:0.82rem; color:var(--text-muted);">2. Tegneverktøy & Farge:</label>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; align-items:center;">
+                                <input type="color" id="brush-color" value="#ff2a5f" style="width:42px; height:34px; border:none; background:none; cursor:pointer;">
+                                <input type="range" id="brush-size" min="2" max="28" value="8" style="width:90px;">
+                                <button type="button" class="btn-dark" data-action="cover-undo">↩️ Angre</button>
+                                <button type="button" class="btn-dark" data-action="cover-clear">🗑️ Blankt</button>
+                            </div>
+
+                            <label style="font-size:0.82rem; color:var(--text-muted);">3. Hurtig-design & Stempler:</label>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;">
+                                <button type="button" class="btn-purple" data-action="cover-auto">✨ Auto-Design Cover</button>
+                                <button type="button" class="btn-dark" data-action="cover-text">🏷️ Trykk Band/Tittel</button>
+                                <button type="button" class="btn-dark" data-action="cover-emoji" data-emoji="🎸">🎸</button>
+                                <button type="button" class="btn-dark" data-action="cover-emoji" data-emoji="🎅">🎅</button>
+                                <button type="button" class="btn-dark" data-action="cover-emoji" data-emoji="🎄">🎄</button>
+                                <button type="button" class="btn-dark" data-action="cover-emoji" data-emoji="❄️">❄️</button>
+                                <button type="button" class="btn-dark" data-action="cover-emoji" data-emoji="🔥">🔥</button>
+                            </div>
+
+                            <button type="button" class="btn-gold" style="width:100%; padding:13px; font-size:1.02rem;" data-action="release-single">🚀 Gi ut Singel på Julelista! (-20% Energi)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FANE 3: TURNÉ & RYTMEKONSERT (ROLIGERE TEMPO) -->
+            <div class="tab-panel" id="tab-concert">
+                <div class="card">
+                    <h2>
+                        <span>🗺️ 1. Interaktivt Norgeskart – Velg Konsertby</span>
+                        <span style="font-size:0.85rem; color:var(--accent-gold);" id="selected-city-label">Valgt by: Ålesund Grendehus</span>
+                    </h2>
+                    <canvas id="tour-map-canvas" class="module-canvas" width="760" height="190" style="cursor:pointer; margin-bottom:10px;"></canvas>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
+                        <div id="city-buttons-strip" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+                        <button type="button" class="btn-green" data-action="start-concert">🎤 Start Julekonsert i Valgt By!</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>
+                        <span>🔥 2. Live Konsertscene (Rolig 50% tempo)</span>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <label style="font-size:0.83rem; color:var(--text-light); cursor:pointer;">
+                                <input type="checkbox" id="auto-jam-checkbox"> 🤖 Auto-Jam Hjelp
+                            </label>
+                            <span id="live-score-badge" style="font-size:0.9rem; color:var(--accent-green);">Score: 0% | Treff: 0 | Combo: x1</span>
+                        </div>
+                    </h2>
+
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; align-items:center;">
+                        <label style="font-size:0.82rem; color:var(--text-muted);">Låt over høyttalerne:</label>
+                        <select id="concert-song-select" style="max-width:260px;"></select>
+                        <button type="button" class="btn-gold" data-action="stage-fx" data-fx="pyro">🔥 Pyro (+7%)</button>
+                        <button type="button" class="btn-blue" data-action="stage-fx" data-fx="snow">❄️ Snøkanon (+5%)</button>
+                        <button type="button" class="btn-purple" data-action="stage-fx" data-fx="dive">🤘 Stage Dive (+9%)</button>
+                    </div>
+
+                    <canvas id="stage-canvas" class="module-canvas" width="760" height="310"></canvas>
+
+                    <div class="lane-btn-row">
+                        <button type="button" class="btn-dark" data-action="hit-lane" data-lane="0">🔴 Spor 1 (Tast A)</button>
+                        <button type="button" class="btn-dark" data-action="hit-lane" data-lane="1">🟡 Spor 2 (Tast S)</button>
+                        <button type="button" class="btn-dark" data-action="hit-lane" data-lane="2">🟢 Spor 3 (Tast D)</button>
+                        <button type="button" class="btn-dark" data-action="hit-lane" data-lane="3">🔵 Spor 4 (Tast F)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>⚔️ 3. Battle of the Bands – Utfordre Rivalene</h2>
+                    <div id="rivals-list-box"></div>
+                </div>
+            </div>
+
+            <!-- FANE 4: BANDROM -->
+            <div class="tab-panel" id="tab-band">
+                <div class="card">
+                    <h2>🦌 Ansett Musikere & Snakk med Bandet</h2>
+                    <div class="sub-grid-2">
+                        <div>
+                            <h3>Tilgjengelige Musikere</h3>
+                            <div id="band-members-list"></div>
+                        </div>
+                        <div>
+                            <h3 id="chat-header-title">💬 Samtale med: Nisse-Nils</h3>
+                            <div class="log-box" id="member-chat-box" style="height:200px; margin-bottom:8px;">
+                                <div class="log-line warn">Klikk på et spørsmål under eller skriv ditt eget!</div>
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                                <button type="button" class="btn-dark" data-action="ask-member" data-topic="pitch">Hvorfor ansette deg?</button>
+                                <button type="button" class="btn-dark" data-action="ask-member" data-topic="tip">Har du et studio-tips?</button>
+                                <button type="button" class="btn-dark" data-action="ask-member" data-topic="xmas">Favoritt-julemat?</button>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" id="custom-chat-input" placeholder="Skriv et eget spørsmål til musikeren...">
+                                <button type="button" class="btn-blue" data-action="send-chat">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FANE 5: VIDEO, BUTIKK & DISKOGRAFI -->
+            <div class="tab-panel" id="tab-shop">
+                <div class="card">
+                    <h2>🎬 1. Musikkvideo-Regissør (2x Strømmingsfart!)</h2>
+                    <div class="sub-grid-2">
+                        <div>
+                            <canvas id="mv-canvas" class="module-canvas" width="380" height="210"></canvas>
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Velg utgitt singel:</label>
+                            <select id="mv-song-select" style="margin-bottom:8px;"></select>
+
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Kulisse:</label>
+                            <select id="mv-bg-select" style="margin-bottom:8px;">
+                                <option value="snowforest">🌲 Snødekt Nordpol-skog</option>
+                                <option value="rooftop">🏙️ Skyskraper i Julelys</option>
+                                <option value="fireworkshop">🔥 Rocka Nisseverksted</option>
+                            </select>
+
+                            <label style="font-size:0.82rem; color:var(--text-muted);">Kostymer:</label>
+                            <select id="mv-costume-select" style="margin-bottom:12px;">
+                                <option value="santa">🎅 Rocke-Nisser</option>
+                                <option value="leather">🧥 Nagler & Skinnjakker</option>
+                                <option value="glitter">✨ Gull & Juleglitter</option>
+                            </select>
+
+                            <button type="button" class="btn-gold" style="width:100%;" data-action="produce-mv">🎥 Spill inn Musikkvideo (3 500 kr)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🛒 2. Utstyrsbutikk & Turnébuss</h2>
+                    <div id="gear-shop-list"></div>
+                </div>
+
+                <div class="card">
+                    <h2>💿 3. Din Diskografi (Hør på og last ned egne låter)</h2>
+                    <div id="discography-list"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- HØYRE SIDEKOLONNE -->
+        <div class="side-column">
+            <div class="card">
+                <h3>🏆 Topp 10 – Slaget om Julelista</h3>
+                <div id="top10-chart-list" style="font-size:0.85rem;"></div>
+            </div>
+
+            <div class="card">
+                <h3>📜 Hendelseslogg</h3>
+                <div class="log-box" id="game-log-box"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-box" id="modal-content"></div>
+</div>
+
+<script>
+(function() {
+    const STORAGE_KEY = 'rockstar_xmas_v5_3_slow';
+
+    const TOUR_CITIES = [
+        { id: 'alesund', name: 'Ålesund Grendehus', x: 140, y: 130, cost: 15, basePay: 3500, weather: 'Stille snødryss' },
+        { id: 'bergen', name: 'Bergen Julehall', x: 115, y: 165, cost: 22, basePay: 6500, weather: 'Sludd & Kuling' },
+        { id: 'trondheim', name: 'Trondheim Spektrum', x: 245, y: 100, cost: 28, basePay: 11000, weather: 'Krystallklart & -8°C' },
+        { id: 'oslo', name: 'Oslo Spektrum', x: 285, y: 165, cost: 35, basePay: 20000, weather: 'Tett Juletrafikk' },
+        { id: 'northpole', name: 'Nordpolen Is-Arena', x: 600, y: 45, cost: 45, basePay: 48000, weather: 'Nordlys & Snøstorm' }
+    ];
+
+    const BAND_CANDIDATES = [
+        { id: 'nils', name: 'Nisse-Nils', role: 'Trommer', emoji: '🥁🎅', cost: 4000, bonus: 12, pitch: 'Jeg spiller dobbel basstromme raskere enn julenissens reinsdyr!', tip: 'Legg skarptromme på slag 5 og 13 i trommemaskinen for ekte rocke-groove!', xmas: 'Pinnekjøtt og ekstra sterk julegløgg!' },
+        { id: 'ronja', name: 'Riff-Ronja', role: 'El-Gitar', emoji: '🎸⚡', cost: 5500, bonus: 16, pitch: 'Mine gitarsoloer smelter snøen på 100 meters avstand!', tip: 'Velg Julerock El-Gitar i opptakeren og syng høyt i refrenget!', xmas: 'Sprø ribbe med masse surkål!' },
+        { id: 'gunnar', name: 'Groove-Gunnar', role: 'Bass', emoji: '🎸🦌', cost: 4500, bonus: 14, pitch: 'Uten tung julebass blir det ingen dans rundt juletreet!', tip: 'Husk å fyre av Pyro og Stage Dive midt i konserten for å løfte karakteren!', xmas: 'Lutefisk med bacon og ertestuing!' },
+        { id: 'mona', name: 'Manager-Mona', role: 'Manager', emoji: '💼🌟', cost: 7500, bonus: 22, pitch: 'Jeg forhandler fram dobbel strømmebetaling og fikser avisoverskrifter!', tip: 'Spill inn musikkvideo i Fane 5 med en gang du har gitt ut en singel!', xmas: 'Riskrem med rød saus og mandel!' }
+    ];
+
+    const SHOP_ITEMS = [
+        { id: 'flyingv', name: 'Flying-V Gitar med Julelys', cost: 4500, desc: 'Vises på scenen og gir +10% konsertscore' },
+        { id: 'doublekick', name: 'Gull-Trommesett med Snøkanon', cost: 6500, desc: 'Vises på scenen og gir +12% låtkvalitet' },
+        { id: 'ampstack', name: 'Nordpolen Rørforsterker-vegg', cost: 8500, desc: 'Vises på scenen og øker publikums-hype' },
+        { id: 'tourbus', name: 'Luksus Nightliner Turnébuss', cost: 12000, desc: 'Halverer energibruk på reiser i Norge' }
+    ];
+
+    const RIVALS = [
+        { id: 'grinch', name: 'The Grinch Gang', song: 'Stjålet Julestrømpe', streams: 14500, diff: 58, prize: 9000 },
+        { id: 'glogg', name: 'Gløgg & Gitar', song: 'Kanel i Svingene', streams: 32000, diff: 68, prize: 16000 },
+        { id: 'snofreser', name: 'DJ Snøfreser', song: 'Komprimert Vinter', streams: 68000, diff: 76, prize: 28000 }
+    ];
+
+    let game = {
+        bandName: 'The Julebukks',
+        money: 15000,
+        fans: 150,
+        energy: 100,
+        hype: 15,
+        soundOn: true,
+        bpm: 120,
+        selectedCityId: 'alesund',
+        selectedMemberChatId: 'nils',
+        hiredMembers: [],
+        ownedGear: [],
+        unreleasedSongs: [],
+        releasedSongs: [],
+        drumGrid: [
+            [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+            [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+            [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+            [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0]
+        ]
+    };
+
+    let audioCtx = null;
+    let seqInterval = null;
+    let seqPlaying = false;
+    let currentStep = 0;
+
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let lastVocalScore = 0;
+    let lastRecordedUrl = null;
+    let recordingTimer = null;
+
+    let coverPaths = [];
+    let isDrawingCover = false;
+
+    let concertState = {
+        active: false,
+        isBattle: false,
+        rivalObj: null,
+        notes: [],
+        hits: 0,
+        misses: 0,
+        combo: 1,
+        maxCombo: 1,
+        rhythmPoints: 0,
+        stageBonus: 0,
+        autoJam: false,
+        crowd: [],
+        startTime: 0,
+        duration: 32000, // Utvidet varighet siden tempoet er halvert
+        backingAudioEl: null
+    };
+
+    function showToast(msg, type) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = 'toast ' + (type || 'info');
+        div.innerText = msg;
+        container.appendChild(div);
+        const fb = document.getElementById('action-feedback');
+        if (fb) fb.innerHTML = '⚡ <strong>Siste handling:</strong> ' + msg;
+        setTimeout(() => { div.remove(); }, 3200);
+    }
+
+    function addLog(msg, level) {
+        const box = document.getElementById('game-log-box');
+        if (!box) return;
+        const row = document.createElement('div');
+        row.className = 'log-line ' + (level || 'ok');
+        const now = new Date().toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        row.innerText = '[' + now + '] ' + msg;
+        box.prepend(row);
+    }
+
+    function saveGame() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(game)); } catch (e) {}
+    }
+
+    function loadGame() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                game = Object.assign(game, parsed);
+            }
+        } catch (e) {}
+    }
+
+    function ensureAudioCtx() {
+        try {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) {}
+        return audioCtx;
+    }
+
+    function playDrumSound(row, destNode) {
+        if (!game.soundOn && !destNode) return;
+        const ctx = ensureAudioCtx();
+        if (!ctx) return;
+        const out = destNode || ctx.destination;
+        const now = ctx.currentTime;
+
+        if (row === 0) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.frequency.setValueAtTime(135, now);
+            osc.frequency.exponentialRampToValueAtTime(36, now + 0.14);
+            g.gain.setValueAtTime(0.85, now);
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+            osc.connect(g); g.connect(out);
+            osc.start(now); osc.stop(now + 0.17);
+        } else if (row === 1) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(210, now);
+            g.gain.setValueAtTime(0.55, now);
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.13);
+            osc.connect(g); g.connect(out);
+            osc.start(now); osc.stop(now + 0.14);
+        } else if (row === 2) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(920, now);
+            g.gain.setValueAtTime(0.18, now);
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            osc.connect(g); g.connect(out);
+            osc.start(now); osc.stop(now + 0.06);
+        } else {
+            [1760, 2349].forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.015);
+                g.gain.setValueAtTime(0.16, now);
+                g.gain.exponentialRampToValueAtTime(0.008, now + 0.18);
+                osc.connect(g); g.connect(out);
+                osc.start(now); osc.stop(now + 0.19);
+            });
+        }
+    }
+
+    function playBackingChord(stepIndex, style, destNode) {
+        if ((!game.soundOn && !destNode) || style === 'drums') return;
+        const ctx = ensureAudioCtx();
+        if (!ctx) return;
+        const out = destNode || ctx.destination;
+        const now = ctx.currentTime;
+        const progression = [220, 174.61, 130.81, 196.00];
+        const root = progression[Math.floor(stepIndex / 4) % progression.length];
+
+        if (style === 'guitar' && stepIndex % 2 === 0) {
+            [root, root * 1.5].forEach(f => {
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(f, now);
+                g.gain.setValueAtTime(0.13, now);
+                g.gain.exponentialRampToValueAtTime(0.008, now + 0.2);
+                osc.connect(g); g.connect(out);
+                osc.start(now); osc.stop(now + 0.21);
+            });
+        } else if (style === 'synth') {
+            const mult = [1, 1.25, 1.5, 2][stepIndex % 4];
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(root * 2 * mult, now);
+            g.gain.setValueAtTime(0.17, now);
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.17);
+            osc.connect(g); g.connect(out);
+            osc.start(now); osc.stop(now + 0.18);
+        } else if (style === 'metal') {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(root * 0.5, now);
+            g.gain.setValueAtTime(0.22, now);
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.connect(g); g.connect(out);
+            osc.start(now); osc.stop(now + 0.16);
+        }
+    }
+
+    function buildSequencerDOM() {
+        const container = document.getElementById('sequencer-grid');
+        if (!container) return;
+        container.innerHTML = '';
+        const labels = ['🥁 Kick', '🥁 Snare', '✨ Hi-Hat', '🔔 Bjeller'];
+
+        for (let r = 0; r < 4; r++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'sequencer-row';
+            const lbl = document.createElement('div');
+            lbl.className = 'seq-label';
+            lbl.innerText = labels[r];
+            rowDiv.appendChild(lbl);
+
+            for (let c = 0; c < 16; c++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = 'seq-cell-' + r + '-' + c;
+                btn.dataset.action = 'seq-cell';
+                btn.dataset.row = r;
+                btn.dataset.col = c;
+                btn.className = 'seq-step ' + (game.drumGrid[r][c] ? ('on-' + r) : '');
+                rowDiv.appendChild(btn);
+            }
+            container.appendChild(rowDiv);
+        }
+        const grooveEl = document.getElementById('seq-groove-label');
+        if (grooveEl) grooveEl.innerText = 'Groove-bonus: +' + calcGrooveBonus() + '%';
+    }
+
+    function calcGrooveBonus() {
+        let count = 0;
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 16; c++) {
+                if (game.drumGrid[r][c]) count++;
+            }
+        }
+        return count === 0 ? 0 : Math.min(30, Math.max(8, Math.round(count * 1.15)));
+    }
+
+    function toggleSequencer() {
+        const btn = document.getElementById('btn-seq-play');
+        if (seqPlaying) {
+            clearInterval(seqInterval);
+            seqPlaying = false;
+            if (btn) btn.innerText = '▶️ Start Trommemaskin';
+            document.querySelectorAll('.seq-step').forEach(el => el.classList.remove('playing-head'));
+        } else {
+            seqPlaying = true;
+            currentStep = 0;
+            if (btn) btn.innerText = '⏹️ Stopp Trommemaskin';
+            runSequencerLoop();
+            showToast('🥁 Trommemaskin spiller!', 'success');
+        }
+    }
+
+    function runSequencerLoop() {
+        clearInterval(seqInterval);
+        const stepMs = (60 / game.bpm / 4) * 1000;
+        seqInterval = setInterval(() => {
+            document.querySelectorAll('.seq-step').forEach(el => el.classList.remove('playing-head'));
+            for (let r = 0; r < 4; r++) {
+                const cell = document.getElementById('seq-cell-' + r + '-' + currentStep);
+                if (cell) cell.classList.add('playing-head');
+                if (game.drumGrid[r][currentStep]) playDrumSound(r);
+            }
+            currentStep = (currentStep + 1) % 16;
+        }, stepMs);
+    }
+
+    function loadDrumPreset(type) {
+        if (type === 'rock') {
+            game.drumGrid = [
+                [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                [1,0,0,1, 0,0,1,0, 1,0,0,1, 0,0,1,0]
+            ];
+        } else if (type === 'disco') {
+            game.drumGrid = [
+                [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+                [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+                [1,1,0,1, 1,0,1,1, 1,1,0,1, 1,0,1,1]
+            ];
+        } else {
+            game.drumGrid = [
+                [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+                [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+                [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0]
+            ];
+        }
+        buildSequencerDOM();
+        saveGame();
+        showToast('Lastet tromme-preset: ' + type.toUpperCase(), 'success');
+    }
+
+    async function startMultitrackRecording(useMic) {
+        if (isRecording) return;
+        const ctx = ensureAudioCtx();
+        if (!ctx) return;
+
+        const mixBus = ctx.createGain();
+        mixBus.gain.value = 0.9;
+        let streamDest = null;
+        try { streamDest = ctx.createMediaStreamDestination(); mixBus.connect(streamDest); } catch (e) {}
+        if (game.soundOn) mixBus.connect(ctx.destination);
+
+        let micStream = null;
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+
+        if (useMic && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const micSrc = ctx.createMediaStreamSource(micStream);
+                const micGain = ctx.createGain();
+                micGain.gain.value = (parseInt(document.getElementById('mic-gain-slider').value, 10) || 130) / 100;
+                micSrc.connect(micGain);
+                micGain.connect(analyser);
+                micGain.connect(mixBus);
+            } catch (err) {
+                showToast('Fant ikke mikrofon – bruker Synth-Vokal + Band!', 'info');
+                useMic = false;
+            }
+        } else {
+            useMic = false;
+        }
+
+        if (!useMic) mixBus.connect(analyser);
+
+        isRecording = true;
+        recordedChunks = [];
+        document.getElementById('btn-rec-mic').disabled = true;
+        document.getElementById('btn-rec-synth').disabled = true;
+        document.getElementById('btn-rec-stop').disabled = false;
+        document.getElementById('rec-status-badge').innerText = '🔴 TAR OPP (6 sek)...';
+
+        if (streamDest && typeof MediaRecorder !== 'undefined') {
+            try {
+                mediaRecorder = new MediaRecorder(streamDest.stream);
+                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    if (recordedChunks.length > 0) {
+                        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        lastRecordedUrl = URL.createObjectURL(blob);
+                        const box = document.getElementById('studio-preview-box');
+                        const aud = document.getElementById('studio-audio-preview');
+                        const dl = document.getElementById('studio-download-link');
+                        if (box && aud) {
+                            box.style.display = 'block';
+                            aud.src = lastRecordedUrl;
+                            if (dl) dl.href = lastRecordedUrl;
+                        }
+                    }
+                };
+                mediaRecorder.start();
+            } catch (e) {}
+        }
+
+        const style = document.getElementById('backing-instrument').value;
+        let step = 0;
+        const stepMs = (60 / game.bpm / 4) * 1000;
+        const recBeatInterval = setInterval(() => {
+            if (!isRecording) { clearInterval(recBeatInterval); return; }
+            for (let r = 0; r < 4; r++) {
+                if (game.drumGrid[r][step % 16]) playDrumSound(r, mixBus);
+            }
+            playBackingChord(step, style, mixBus);
+            if (!useMic && step % 2 === 0) {
+                const notes = [440, 523.25, 659.25, 587.33, 493.88, 523.25];
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(notes[step % notes.length], ctx.currentTime);
+                g.gain.setValueAtTime(0.2, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.17);
+                osc.connect(g); g.connect(mixBus);
+                osc.start(); osc.stop(ctx.currentTime + 0.18);
+            }
+            step++;
+        }, stepMs);
+
+        const vCanvas = document.getElementById('vocal-canvas');
+        const vCtx = vCanvas.getContext('2d');
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+        function drawSpec() {
+            if (!isRecording) return;
+            analyser.getByteFrequencyData(freqData);
+            vCtx.fillStyle = '#070b14';
+            vCtx.fillRect(0, 0, vCanvas.width, vCanvas.height);
+            const barW = (vCanvas.width / freqData.length) - 2;
+            for (let i = 0; i < freqData.length; i++) {
+                const h = (freqData[i] / 255) * (vCanvas.height - 10);
+                vCtx.fillStyle = i % 2 === 0 ? '#e11d48' : '#10b981';
+                vCtx.fillRect(i * (barW + 2), vCanvas.height - h, barW, h);
+            }
+            requestAnimationFrame(drawSpec);
+        }
+        drawSpec();
+
+        recordingTimer = setTimeout(() => {
+            stopMultitrackRecording(null, recBeatInterval);
+        }, 6000);
+    }
+
+    function stopMultitrackRecording(micStream, intervalId) {
+        if (!isRecording) return;
+        isRecording = false;
+        clearTimeout(recordingTimer);
+        if (intervalId) clearInterval(intervalId);
+        if (micStream) micStream.getTracks().forEach(t => t.stop());
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            try { mediaRecorder.stop(); } catch (e) {}
+        }
+
+        lastVocalScore = Math.floor(Math.random() * 17) + 82;
+        document.getElementById('btn-rec-mic').disabled = false;
+        document.getElementById('btn-rec-synth').disabled = false;
+        document.getElementById('btn-rec-stop').disabled = true;
+        document.getElementById('rec-status-badge').innerText = '✅ Opptak klart!';
+        document.getElementById('vocal-score-label').innerText = 'Opptaks-Score: ' + lastVocalScore + ' / 100';
+        addLog('Flerspors opptak ferdig! Score: ' + lastVocalScore + '/100.', 'ok');
+        showToast('Opptak ferdig! Score: ' + lastVocalScore + '/100', 'success');
+    }
+
+    function generateRandomSongTitle() {
+        const a = ['Gløgg', 'Nisse', 'Snøstorm', 'Kanel', 'Nordpol', 'Ribbe', 'Stjerne', 'Elektrisk'];
+        const b = ['i Forsterkeren', 'på Taket', 'Boogie', 'Riff', 'Rock', 'Express', 'Overdrive', 'Natt'];
+        const t = a[Math.floor(Math.random() * a.length)] + ' ' + b[Math.floor(Math.random() * b.length)];
+        document.getElementById('song-title-input').value = t;
+    }
+
+    function saveSongToDemo() {
+        if (game.energy < 15) {
+            showToast('For lite energi (15% kreves)! Klikk «Drikk Julegløgg» øverst.', 'error');
+            return;
+        }
+        let title = document.getElementById('song-title-input').value.trim();
+        if (!title) {
+            generateRandomSongTitle();
+            title = document.getElementById('song-title-input').value.trim();
+        }
+        const genre = document.getElementById('song-genre-select').value;
+        game.energy -= 15;
+
+        const groove = calcGrooveBonus();
+        const vocal = lastVocalScore > 0 ? lastVocalScore : 72;
+        const quality = Math.min(100, Math.round(vocal * 0.5 + 28 + groove));
+
+        game.unreleasedSongs.push({
+            id: 'song_' + Date.now(),
+            title: title,
+            genre: genre,
+            quality: quality,
+            audioUrl: lastRecordedUrl || null,
+            hasVideo: false,
+            streams: 0,
+            coverDataUrl: null
+        });
+
+        document.getElementById('song-title-input').value = '';
+        addLog('Lagret demoen «' + title + '» (Kvalitet: ' + quality + '/100).', 'ok');
+        showToast('💾 «' + title + '» lagret! Gå til Fane 2 for å gi den ut.', 'success');
+        saveGame();
+        updateAllUI();
+    }
+
+    function initCoverCanvas() {
+        const canvas = document.getElementById('cover-canvas');
+        if (!canvas) return;
+        redrawCoverCanvas();
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (cx - rect.left) * (canvas.width / rect.width),
+                y: (cy - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawingCover = true;
+            coverPaths.push({
+                type: 'stroke',
+                color: document.getElementById('brush-color').value,
+                size: parseInt(document.getElementById('brush-size').value, 10) || 8,
+                points: [getPos(e)]
+            });
+            redrawCoverCanvas();
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawingCover) return;
+            coverPaths[coverPaths.length - 1].points.push(getPos(e));
+            redrawCoverCanvas();
+        });
+        window.addEventListener('mouseup', () => { isDrawingCover = false; });
+    }
+
+    function redrawCoverCanvas() {
+        const canvas = document.getElementById('cover-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        g.addColorStop(0, '#1e1b4b');
+        g.addColorStop(0.5, '#7f1d1d');
+        g.addColorStop(1, '#0f172a');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        coverPaths.forEach(item => {
+            if (item.type === 'stroke' && item.points.length > 0) {
+                ctx.strokeStyle = item.color;
+                ctx.lineWidth = item.size;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(item.points[0].x, item.points[0].y);
+                item.points.forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.stroke();
+            } else if (item.type === 'emoji') {
+                ctx.font = '48px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.emoji, item.x, item.y);
+            } else if (item.type === 'text') {
+                ctx.fillStyle = '#fde047';
+                ctx.font = 'bold 22px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.band, canvas.width / 2, 42);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(item.title, canvas.width / 2, canvas.height - 26);
+            }
+        });
+    }
+
+    function releaseSingleNow() {
+        if (game.unreleasedSongs.length === 0) {
+            showToast('Ingen demo-låt klar! Lagre en låt i Fane 1 først.', 'error');
+            return;
+        }
+        if (game.energy < 20) {
+            showToast('For lite energi (20% kreves)! Klikk «Drikk Julegløgg» øverst.', 'error');
+            return;
+        }
+        const sel = document.getElementById('unreleased-select');
+        const idx = parseInt(sel.value, 10) || 0;
+        const song = game.unreleasedSongs.splice(idx, 1)[0];
+        if (!song) return;
+
+        game.energy -= 20;
+        song.coverDataUrl = document.getElementById('cover-canvas').toDataURL('image/png');
+        const newFans = Math.round(song.quality * 2.2);
+        const cash = newFans * 18;
+        song.streams = newFans * 25;
+
+        game.fans += newFans;
+        game.money += cash;
+        game.hype = Math.min(100, game.hype + 8);
+        game.releasedSongs.unshift(song);
+
+        addLog('🚀 Ga ut singelen «' + song.title + '»! +' + cash + ' kr og +' + newFans + ' fans!', 'ok');
+        showToast('🚀 Singelen «' + song.title + '» er sluppet!', 'success');
+        saveGame();
+        updateAllUI();
+    }
+
+    function drawTourMap() {
+        const canvas = document.getElementById('tour-map-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#07101e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        TOUR_CITIES.forEach((c, i) => { if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y); });
+        ctx.stroke();
+
+        TOUR_CITIES.forEach(c => {
+            const sel = c.id === game.selectedCityId;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, sel ? 13 : 9, 0, Math.PI * 2);
+            ctx.fillStyle = sel ? '#10b981' : '#e11d48';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = sel ? 'bold 13px sans-serif' : '12px sans-serif';
+            ctx.fillText(c.name, c.x - 35, c.y - 16);
+        });
+    }
+
+    function selectTourCity(cityId) {
+        game.selectedCityId = cityId;
+        const city = TOUR_CITIES.find(c => c.id === cityId) || TOUR_CITIES[0];
+        const lbl = document.getElementById('selected-city-label');
+        if (lbl) lbl.innerText = 'Valgt by: ' + city.name + ' (' + city.weather + ')';
+        drawTourMap();
+        saveGame();
+        showToast('📍 Valgte konsertby: ' + city.name, 'info');
+    }
+
+    function computeLiveScore() {
+        const gearBonus = (game.ownedGear.includes('flyingv') ? 10 : 0) + (game.ownedGear.includes('ampstack') ? 8 : 0);
+        return Math.min(100, Math.max(0, Math.round(concertState.rhythmPoints + concertState.stageBonus + gearBonus)));
+    }
+
+    function updateConcertBadge() {
+        const b = document.getElementById('live-score-badge');
+        if (b) b.innerText = 'Score: ' + computeLiveScore() + '% | Treff: ' + concertState.hits + ' | Combo: x' + concertState.combo;
+    }
+
+    function startConcertShow(isBattle, rivalId) {
+        if (concertState.active) {
+            showToast('Konserten pågår allerede!', 'info');
+            return;
+        }
+        const city = TOUR_CITIES.find(c => c.id === game.selectedCityId) || TOUR_CITIES[0];
+        const cost = game.ownedGear.includes('tourbus') ? Math.ceil(city.cost * 0.5) : city.cost;
+        if (game.energy < cost) {
+            showToast('For lite energi (' + cost + '% kreves)! Klikk «Drikk Julegløgg» øverst.', 'error');
+            return;
+        }
+
+        game.energy -= cost;
+        concertState.active = true;
+        concertState.isBattle = !!isBattle;
+        concertState.rivalObj = isBattle ? RIVALS.find(r => r.id === rivalId) : null;
+        concertState.notes = [];
+        concertState.hits = 0;
+        concertState.misses = 0;
+        concertState.combo = 1;
+        concertState.maxCombo = 1;
+        concertState.rhythmPoints = 14;
+        concertState.stageBonus = 0;
+        concertState.startTime = performance.now();
+
+        concertState.crowd = [];
+        const em = ['🎅', '🦌', '🧝', '🤘', '💃', '🕺', '🎄'];
+        for (let i = 0; i < 32; i++) {
+            concertState.crowd.push({ x: 20 + (i % 16) * 25, y: 245 + Math.floor(i / 16) * 30, emoji: em[i % em.length], phase: i });
+        }
+
+        const songSel = document.getElementById('concert-song-select');
+        const all = [...game.releasedSongs, ...game.unreleasedSongs];
+        if (songSel && songSel.value) {
+            const chosen = all.find(s => s.id === songSel.value);
+            if (chosen && chosen.audioUrl) {
+                try {
+                    concertState.backingAudioEl = new Audio(chosen.audioUrl);
+                    concertState.backingAudioEl.play().catch(() => {});
+                } catch (e) {}
+            }
+        }
+
+        updateAllUI();
+        updateConcertBadge();
+        showToast('🎤 Konserten i rolig tempo er i gang! Lykke til!', 'success');
+        requestAnimationFrame(concertLoop);
+    }
+
+    function concertLoop(now) {
+        if (!concertState.active) return;
+        const elapsed = now - concertState.startTime;
+        const canvas = document.getElementById('stage-canvas');
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#070b14';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#1e1b4b';
+        ctx.fillRect(0, 0, 430, 220);
+
+        const bounce = Math.abs(Math.sin(now * 0.009)) * 12;
+        ctx.font = '36px serif';
+        ctx.fillText('🎤🎅', 180, 175 - bounce);
+
+        ctx.font = '22px serif';
+        concertState.crowd.forEach(p => {
+            const j = Math.abs(Math.sin(now * 0.01 + p.phase)) * 9;
+            ctx.fillText(p.emoji, p.x, p.y - j);
+        });
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(440, 0, 320, 310);
+
+        const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6'];
+        const keys = ['A', 'S', 'D', 'F'];
+        for (let l = 0; l < 4; l++) {
+            const lx = 440 + l * 80;
+            ctx.strokeStyle = '#1e293b';
+            ctx.strokeRect(lx, 0, 80, 310);
+            ctx.strokeStyle = colors[l];
+            ctx.lineWidth = 3;
+            ctx.strokeRect(lx + 10, 245, 60, 26);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillText(keys[l], lx + 35, 295);
+        }
+
+        // SLUTT PÅ HASTIGHETEN: 50% lavere spawn-frekvens og 50% lavere fallhastighet (1.75 i stedet for 3.5)
+        if (Math.random() < 0.032 && elapsed < concertState.duration - 2000) {
+            const lane = Math.floor(Math.random() * 4);
+            if (concertState.notes.every(n => n.lane !== lane || n.y > 75)) {
+                concertState.notes.push({ lane: lane, y: -15 });
+            }
+        }
+
+        const autoJam = document.getElementById('auto-jam-checkbox') && document.getElementById('auto-jam-checkbox').checked;
+
+        for (let i = concertState.notes.length - 1; i >= 0; i--) {
+            const n = concertState.notes[i];
+            n.y += 1.75; // <-- Her er farten satt ned med 50%
+
+            if (autoJam && n.y >= 245 && n.y <= 265) {
+                registerLaneHitSuccess();
+                concertState.notes.splice(i, 1);
+                continue;
+            }
+
+            ctx.beginPath();
+            ctx.arc(440 + n.lane * 80 + 40, n.y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = colors[n.lane];
+            ctx.fill();
+
+            if (n.y > 305) {
+                concertState.combo = 1;
+                concertState.notes.splice(i, 1);
+                updateConcertBadge();
+            }
+        }
+
+        if (elapsed >= concertState.duration) {
+            finishConcertShow();
+        } else {
+            requestAnimationFrame(concertLoop);
+        }
+    }
+
+    function registerLaneHitSuccess() {
+        concertState.hits++;
+        concertState.combo = Math.min(8, concertState.combo + 1);
+        const gain = 2.8 + concertState.combo * 0.35;
+        concertState.rhythmPoints = Math.min(85, concertState.rhythmPoints + gain);
+        playDrumSound(concertState.hits % 4);
+        updateConcertBadge();
+    }
+
+    function hitRhythmLane(laneIndex) {
+        if (!concertState.active) {
+            playDrumSound(laneIndex % 4);
+            showToast('Spor ' + (laneIndex + 1) + ' testet!', 'info');
+            return;
+        }
+        const idx = concertState.notes.findIndex(n => n.lane === laneIndex && n.y >= 200 && n.y <= 295);
+        if (idx !== -1) {
+            concertState.notes.splice(idx, 1);
+            registerLaneHitSuccess();
+        } else {
+            concertState.combo = 1;
+            updateConcertBadge();
+        }
+    }
+
+    function finishConcertShow() {
+        concertState.active = false;
+        if (concertState.backingAudioEl) {
+            try { concertState.backingAudioEl.pause(); } catch (e) {}
+            concertState.backingAudioEl = null;
+        }
+        const finalScore = computeLiveScore();
+        const city = TOUR_CITIES.find(c => c.id === game.selectedCityId) || TOUR_CITIES[0];
+
+        if (concertState.isBattle && concertState.rivalObj) {
+            const r = concertState.rivalObj;
+            if (finalScore >= r.diff) {
+                game.money += r.prize;
+                game.fans += 400;
+                addLog('🏆 Slo ' + r.name + ' med ' + finalScore + '%! Premie: ' + r.prize + ' kr!', 'ok');
+                showToast('🏆 Seier mot ' + r.name + '! +' + r.prize + ' kr!', 'success');
+            } else {
+                addLog('⚔️ Tapte mot ' + r.name + ' (' + finalScore + '% mot krav ' + r.diff + '%).', 'warn');
+                showToast('Du fikk ' + finalScore + '%, krevde ' + r.diff + '%.', 'error');
+            }
+        } else {
+            const cash = Math.round(city.basePay * (finalScore / 60));
+            const fans = Math.round(finalScore * 1.8);
+            game.money += cash;
+            game.fans += fans;
+            addLog('🎤 Konsert i ' + city.name + ' ferdig! Score: ' + finalScore + '%, +' + cash + ' kr!', 'ok');
+            showToast('🎉 Konsert ferdig! Score: ' + finalScore + '% | +' + cash + ' kr', 'success');
+        }
+        saveGame();
+        updateAllUI();
+    }
+
+    function renderIdleStageCanvas() {
+        if (concertState.active) return;
+        const canvas = document.getElementById('stage-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#090f1d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🎅 (Rolig tempo) Klikk «Start Julekonsert» for å starte!', canvas.width / 2, 145);
+        ctx.textAlign = 'left';
+    }
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn || btn.disabled) return;
+
+        const action = btn.dataset.action;
+
+        switch (action) {
+            case 'switch-tab': {
+                const tabName = btn.dataset.tab;
+                ['studio', 'cover', 'concert', 'band', 'shop'].forEach(t => {
+                    const p = document.getElementById('tab-' + t);
+                    const b = document.getElementById('tabbtn-' + t);
+                    if (p) p.classList.toggle('active', t === tabName);
+                    if (b) b.classList.toggle('active', t === tabName);
+                });
+                if (tabName === 'cover') redrawCoverCanvas();
+                if (tabName === 'concert') { drawTourMap(); renderIdleStageCanvas(); }
+                break;
+            }
+            case 'rename-band': {
+                const n = prompt('Nytt navn på bandet:', game.bandName);
+                if (n && n.trim()) {
+                    game.bandName = n.trim();
+                    saveGame();
+                    updateAllUI();
+                    showToast('Bandnavn endret til ' + game.bandName, 'success');
+                }
+                break;
+            }
+            case 'toggle-sound': {
+                game.soundOn = !game.soundOn;
+                saveGame();
+                updateAllUI();
+                showToast(game.soundOn ? '🔊 Lyd PÅ' : '🔇 Lyd AV', 'info');
+                break;
+            }
+            case 'reset-game': {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+                break;
+            }
+            case 'rest-band': {
+                game.energy = 100;
+                saveGame();
+                updateAllUI();
+                showToast('🎄 Energi fylt opp til 100%!', 'success');
+                break;
+            }
+            case 'open-tabloid': {
+                const modal = document.getElementById('modal-backdrop');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <h2 style="color:var(--accent-gold); margin-top:0;">📰 Rocke-Tabloiden: Pressekonferanse</h2>
+                    <p>Journalistene spør: <em>«Hvordan blir årets juleturné med ${game.bandName}?»</em></p>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+                        <button type="button" class="btn-green" data-action="tabloid-choice" data-choice="charm">😇 «Det blir magisk julestemning for alle!» (+200 Fans)</button>
+                        <button type="button" class="btn-gold" data-action="tabloid-choice" data-choice="rock">🤘 «Vi sprenger høyttalerne på turné!» (+350 Fans, +2 500 kr)</button>
+                        <button type="button" class="btn-dark" data-action="close-modal">Lukk</button>
+                    </div>
+                `;
+                modal.classList.add('open');
+                break;
+            }
+            case 'tabloid-choice': {
+                if (btn.dataset.choice === 'charm') {
+                    game.fans += 200;
+                    game.hype = Math.min(100, game.hype + 8);
+                    showToast('📰 +200 Fans og +8% Hype!', 'success');
+                } else {
+                    game.fans += 350;
+                    game.money += 2500;
+                    showToast('📰 +350 Fans og +2 500 kr!', 'success');
+                }
+                document.getElementById('modal-backdrop').classList.remove('open');
+                saveGame();
+                updateAllUI();
+                break;
+            }
+            case 'close-modal': {
+                document.getElementById('modal-backdrop').classList.remove('open');
+                break;
+            }
+            case 'seq-cell': {
+                const r = parseInt(btn.dataset.row, 10);
+                const c = parseInt(btn.dataset.col, 10);
+                game.drumGrid[r][c] = game.drumGrid[r][c] ? 0 : 1;
+                playDrumSound(r);
+                buildSequencerDOM();
+                saveGame();
+                break;
+            }
+            case 'toggle-seq':
+                toggleSequencer();
+                break;
+            case 'drum-preset':
+                loadDrumPreset(btn.dataset.preset);
+                break;
+            case 'drum-clear':
+                game.drumGrid = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
+                buildSequencerDOM();
+                showToast('Trommerutenett tømt.', 'info');
+                break;
+            case 'rec-start':
+                startMultitrackRecording(btn.dataset.mic === 'true');
+                break;
+            case 'rec-stop':
+                stopMultitrackRecording(null, null);
+                break;
+            case 'random-title':
+                generateRandomSongTitle();
+                showToast('Foreslo ny tittel.', 'info');
+                break;
+            case 'save-demo':
+                saveSongToDemo();
+                break;
+            case 'cover-undo':
+                coverPaths.pop();
+                redrawCoverCanvas();
+                break;
+            case 'cover-clear':
+                coverPaths = [];
+                redrawCoverCanvas();
+                break;
+            case 'cover-emoji':
+                coverPaths.push({ type: 'emoji', emoji: btn.dataset.emoji, x: 70 + Math.random() * 220, y: 80 + Math.random() * 200 });
+                redrawCoverCanvas();
+                break;
+            case 'cover-text': {
+                const sel = document.getElementById('unreleased-select');
+                const sTitle = (sel && game.unreleasedSongs[sel.value]) ? game.unreleasedSongs[sel.value].title : 'Jule-Hit';
+                coverPaths.push({ type: 'text', band: game.bandName.toUpperCase(), title: sTitle });
+                redrawCoverCanvas();
+                break;
+            }
+            case 'cover-auto': {
+                coverPaths = [];
+                coverPaths.push({ type: 'emoji', emoji: '🎅', x: 180, y: 170 });
+                coverPaths.push({ type: 'emoji', emoji: '🎸', x: 220, y: 195 });
+                const sel = document.getElementById('unreleased-select');
+                const sTitle = (sel && game.unreleasedSongs[sel.value]) ? game.unreleasedSongs[sel.value].title : 'Jule-Hit';
+                coverPaths.push({ type: 'text', band: game.bandName.toUpperCase(), title: sTitle });
+                redrawCoverCanvas();
+                showToast('✨ Auto-designet cover!', 'success');
+                break;
+            }
+            case 'release-single':
+                releaseSingleNow();
+                break;
+            case 'select-city':
+                selectTourCity(btn.dataset.city);
+                break;
+            case 'start-concert':
+                startConcertShow(false, null);
+                break;
+            case 'start-battle':
+                startConcertShow(true, btn.dataset.rival);
+                break;
+            case 'stage-fx': {
+                if (!concertState.active) {
+                    showToast('Start konserten først for å bruke scene-effekter!', 'info');
+                    return;
+                }
+                const fx = btn.dataset.fx;
+                const add = fx === 'pyro' ? 7 : (fx === 'snow' ? 5 : 9);
+                concertState.stageBonus = Math.min(25, concertState.stageBonus + add);
+                playDrumSound(3);
+                updateConcertBadge();
+                showToast('🔥 Scene-effekt aktivert! (+' + add + '% score)', 'success');
+                break;
+            }
+            case 'hit-lane':
+                hitRhythmLane(parseInt(btn.dataset.lane, 10));
+                break;
+            case 'chat-select': {
+                game.selectedMemberChatId = btn.dataset.member;
+                updateAllUI();
+                break;
+            }
+            case 'hire-member': {
+                const m = BAND_CANDIDATES.find(x => x.id === btn.dataset.member);
+                if (!m) return;
+                if (game.money < m.cost) {
+                    showToast('For lite penger til ' + m.name + ' (' + m.cost + ' kr)!', 'error');
+                    return;
+                }
+                game.money -= m.cost;
+                game.hiredMembers.push(m.id);
+                saveGame();
+                updateAllUI();
+                showToast('🎸 Ansatte ' + m.name + '!', 'success');
+                break;
+            }
+            case 'ask-member': {
+                const m = BAND_CANDIDATES.find(x => x.id === game.selectedMemberChatId) || BAND_CANDIDATES[0];
+                const box = document.getElementById('member-chat-box');
+                const topic = btn.dataset.topic;
+                const ans = topic === 'pitch' ? m.pitch : (topic === 'tip' ? m.tip : m.xmas);
+                box.innerHTML += '<div class="log-line ok"><strong>' + m.name + ':</strong> ' + ans + '</div>';
+                box.scrollTop = box.scrollHeight;
+                break;
+            }
+            case 'send-chat': {
+                const inp = document.getElementById('custom-chat-input');
+                const q = inp.value.trim();
+                if (!q) return;
+                const m = BAND_CANDIDATES.find(x => x.id === game.selectedMemberChatId) || BAND_CANDIDATES[0];
+                const box = document.getElementById('member-chat-box');
+                box.innerHTML += '<div class="log-line warn"><strong>Deg:</strong> ' + q + '</div>';
+                box.innerHTML += '<div class="log-line ok"><strong>' + m.name + ':</strong> ' + m.tip + '</div>';
+                box.scrollTop = box.scrollHeight;
+                inp.value = '';
+                break;
+            }
+            case 'produce-mv': {
+                if (game.releasedSongs.length === 0) {
+                    showToast('Gi ut en singel i Fane 2 før du lager musikkvideo!', 'error');
+                    return;
+                }
+                if (game.money < 3500) {
+                    showToast('Du trenger 3 500 kr for musikkvideo!', 'error');
+                    return;
+                }
+                const sel = document.getElementById('mv-song-select');
+                const song = game.releasedSongs[parseInt(sel.value, 10) || 0];
+                if (!song || song.hasVideo) {
+                    showToast('Allerede musikkvideo på denne låten!', 'info');
+                    return;
+                }
+                game.money -= 3500;
+                song.hasVideo = true;
+                game.fans += 250;
+                saveGame();
+                updateAllUI();
+                showToast('🎬 Musikkvideo ferdig! Dobbel strømming!', 'success');
+                break;
+            }
+            case 'buy-gear': {
+                const item = SHOP_ITEMS.find(x => x.id === btn.dataset.gear);
+                if (!item) return;
+                if (game.money < item.cost) {
+                    showToast('For lite penger til ' + item.name + '!', 'error');
+                    return;
+                }
+                game.money -= item.cost;
+                game.ownedGear.push(item.id);
+                saveGame();
+                updateAllUI();
+                showToast('🛒 Kjøpte ' + item.name + '!', 'success');
+                break;
+            }
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (document.activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            if (e.key === 'Enter' && document.activeElement.id === 'custom-chat-input') {
+                document.querySelector('[data-action="send-chat"]').click();
+            }
+            return;
+        }
+        const k = e.key.toLowerCase();
+        if (k === 'a') hitRhythmLane(0);
+        else if (k === 's') hitRhythmLane(1);
+        else if (k === 'd') hitRhythmLane(2);
+        else if (k === 'f') hitRhythmLane(3);
+    });
+
+    const bpmSlider = document.getElementById('bpm-slider');
+    if (bpmSlider) {
+        bpmSlider.addEventListener('input', (e) => {
+            game.bpm = parseInt(e.target.value, 10) || 120;
+            document.getElementById('bpm-val').innerText = game.bpm;
+            if (seqPlaying) runSequencerLoop();
+        });
+    }
+
+    const micSlider = document.getElementById('mic-gain-slider');
+    if (micSlider) {
+        micSlider.addEventListener('input', (e) => {
+            document.getElementById('mic-gain-label').innerText = e.target.value + '%';
+        });
+    }
+
+    function updateAllUI() {
+        document.getElementById('ui-money').innerText = game.money.toLocaleString('no-NO') + ' kr';
+        document.getElementById('ui-fans').innerText = game.fans.toLocaleString('no-NO');
+        document.getElementById('ui-energy').innerText = game.energy + '%';
+        document.getElementById('ui-hype').innerText = game.hype + '%';
+        document.getElementById('band-name-badge').innerText = 'Band: ' + game.bandName + ' ✏️';
+        document.getElementById('btn-sound-toggle').innerText = game.soundOn ? '🔊 Lyd: PÅ' : '🔇 Lyd: AV';
+
+        const cityStrip = document.getElementById('city-buttons-strip');
+        if (cityStrip) {
+            cityStrip.innerHTML = TOUR_CITIES.map(c =>
+                `<button type="button" class="${c.id === game.selectedCityId ? 'btn-green' : 'btn-dark'}" data-action="select-city" data-city="${c.id}">📍 ${c.name.split(' ')[0]}</button>`
+            ).join('');
+        }
+
+        const unrelSel = document.getElementById('unreleased-select');
+        if (unrelSel) {
+            unrelSel.innerHTML = game.unreleasedSongs.length === 0
+                ? '<option value="">Ingen demoer klare – lag en i Fane 1</option>'
+                : game.unreleasedSongs.map((s, i) => `<option value="${i}">${s.title} (${s.genre} - ${s.quality}/100)</option>`).join('');
+        }
+
+        const cSel = document.getElementById('concert-song-select');
+        if (cSel) {
+            const all = [...game.releasedSongs, ...game.unreleasedSongs];
+            cSel.innerHTML = all.length === 0
+                ? '<option value="">Standard Julerock-komp</option>'
+                : all.map(s => `<option value="${s.id}">${s.title}${s.audioUrl ? ' (Opptak 🎙️)' : ''}</option>`).join('');
+        }
+
+        const rivBox = document.getElementById('rivals-list-box');
+        if (rivBox) {
+            rivBox.innerHTML = RIVALS.map(r => `
+                <div class="item-row">
+                    <div><strong>${r.name}</strong> – «${r.song}» <small style="color:var(--text-muted);">(Krav: ${r.diff}% | Premie: ${r.prize} kr)</small></div>
+                    <button type="button" class="btn-gold" data-action="start-battle" data-rival="${r.id}">⚔️ Utfordre</button>
+                </div>
+            `).join('');
+        }
+
+        const memBox = document.getElementById('band-members-list');
+        if (memBox) {
+            memBox.innerHTML = BAND_CANDIDATES.map(m => {
+                const hired = game.hiredMembers.includes(m.id);
+                return `
+                    <div class="item-row">
+                        <div><strong>${m.emoji} ${m.name}</strong> (${m.role}) <small style="color:var(--accent-green);">+${m.bonus}%</small></div>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn-blue" data-action="chat-select" data-member="${m.id}">💬 Snakk</button>
+                            ${hired ? `<button type="button" class="btn-green" disabled>✅ Ansatt</button>` : `<button type="button" class="btn-gold" data-action="hire-member" data-member="${m.id}">Ansett (${m.cost} kr)</button>`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        const curM = BAND_CANDIDATES.find(x => x.id === game.selectedMemberChatId) || BAND_CANDIDATES[0];
+        const chatH = document.getElementById('chat-header-title');
+        if (chatH && curM) chatH.innerText = '💬 Samtale med: ' + curM.emoji + ' ' + curM.name;
+
+        const mvSel = document.getElementById('mv-song-select');
+        if (mvSel) {
+            mvSel.innerHTML = game.releasedSongs.length === 0
+                ? '<option value="">Gi ut en singel i Fane 2 først</option>'
+                : game.releasedSongs.map((s, i) => `<option value="${i}">${s.title} ${s.hasVideo ? '✅' : ''}</option>`).join('');
+        }
+
+        const shopBox = document.getElementById('gear-shop-list');
+        if (shopBox) {
+            shopBox.innerHTML = SHOP_ITEMS.map(item => {
+                const owned = game.ownedGear.includes(item.id);
+                return `
+                    <div class="item-row">
+                        <div><strong>${item.name}</strong><br><small style="color:var(--text-muted);">${item.desc}</small></div>
+                        ${owned ? `<button type="button" class="btn-green" disabled>✅ Kjøpt</button>` : `<button type="button" class="btn-gold" data-action="buy-gear" data-gear="${item.id}">Kjøp (${item.cost} kr)</button>`}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const discBox = document.getElementById('discography-list');
+        if (discBox) {
+            discBox.innerHTML = game.releasedSongs.length === 0
+                ? '<p style="color:var(--text-muted);">Ingen utgitte låter ennå.</p>'
+                : game.releasedSongs.map(s => `
+                    <div class="item-row">
+                        <div><strong>${s.title}</strong> (${s.genre}) – Kvalitet: ${s.quality}/100 | Strømminger: ${(s.streams || 0).toLocaleString()}</div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            ${s.audioUrl ? `<audio controls src="${s.audioUrl}" style="height:30px;"></audio><a href="${s.audioUrl}" download="${s.title}.webm" class="btn-blue" style="text-decoration:none; padding:5px 10px; border-radius:6px; color:#fff; font-size:0.8rem;">⬇️ Last ned</a>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        const chartBox = document.getElementById('top10-chart-list');
+        if (chartBox) {
+            const list = [
+                ...RIVALS.map(r => ({ name: r.name, song: r.song, streams: r.streams, me: false })),
+                ...game.releasedSongs.map(s => ({ name: game.bandName, song: s.title, streams: s.streams || 0, me: true }))
+            ].sort((a, b) => b.streams - a.streams).slice(0, 10);
+
+            chartBox.innerHTML = list.map((x, i) => `
+                <div style="padding:5px 6px; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; ${x.me ? 'color:#fde047; font-weight:700;' : ''}">
+                    <span>#${i + 1} ${x.name} – «${x.song}»</span>
+                    <span>${x.streams.toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    function startVisualLoops() {
+        const mvCanvas = document.getElementById('mv-canvas');
+        if (mvCanvas) {
+            const mvCtx = mvCanvas.getContext('2d');
+            let a = 0;
+            function drawMv() {
+                a += 0.05;
+                mvCtx.fillStyle = '#064e3b';
+                mvCtx.fillRect(0, 0, mvCanvas.width, mvCanvas.height);
+                mvCtx.font = '38px serif';
+                mvCtx.fillText('🎅🎸', 155, 130 - Math.abs(Math.sin(a)) * 12);
+                mvCtx.fillStyle = '#fde047';
+                mvCtx.font = 'bold 13px sans-serif';
+                mvCtx.fillText('🎬 ' + game.bandName + ' - Musikkvideo-studio', 14, 24);
+                requestAnimationFrame(drawMv);
+            }
+            drawMv();
+        }
+
+        const sCanvas = document.getElementById('snow-canvas');
+        if (sCanvas) {
+            const sCtx = sCanvas.getContext('2d');
+            sCanvas.width = window.innerWidth;
+            sCanvas.height = window.innerHeight;
+            const flakes = Array.from({ length: 45 }, () => ({
+                x: Math.random() * sCanvas.width,
+                y: Math.random() * sCanvas.height,
+                r: 1.5 + Math.random() * 2,
+                vy: 0.6 + Math.random() * 1.1
+            }));
+            function drawSnow() {
+                sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
+                sCtx.fillStyle = 'rgba(255,255,255,0.5)';
+                sCtx.beginPath();
+                flakes.forEach(f => {
+                    sCtx.moveTo(f.x, f.y);
+                    sCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    f.y += f.vy;
+                    if (f.y > sCanvas.height) f.y = -5;
+                });
+                sCtx.fill();
+                requestAnimationFrame(drawSnow);
+            }
+            drawSnow();
+        }
+    }
+
+    loadGame();
+    buildSequencerDOM();
+    initCoverCanvas();
+    drawTourMap();
+    renderIdleStageCanvas();
+    startVisualLoops();
+    updateAllUI();
+    addLog('🎅 Versjon v5.3 er klar med 50% roligere konsert-tempo!', 'ok');
+})();
+</script>
+</body>
+</html>
